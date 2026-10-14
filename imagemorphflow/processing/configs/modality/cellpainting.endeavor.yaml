@@ -1,0 +1,7 @@
+modality: "cellpainting"
+microscope: "endeavor"
+channels:
+  w1: "OrigHoechst"
+  w2: "OrigER"
+  w3: "OrigPh_golgi"
+  w4: "OrigMito"

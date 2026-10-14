@@ -1,0 +1,5 @@
+pipeline_type: "illum"
+pipeline_file: "illum.cppipe"
+correct_illumination: false
+max_parallel_plates: 12
+images_per_process: 6

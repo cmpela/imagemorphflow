@@ -1,0 +1,45 @@
+# Stable project defaults (paths, microscope choice, common parsing)
+project_name: "c2025"
+microscope: "imagexpress"
+image_path: "/data/images"
+use_scratch: false
+scratch_image_path: "/mnt/scratch"
+
+cellprofiler_env: "cellprofiler4"
+
+base_path: "/home/{username}/projects/{project_name}/workspace"
+image_local_path: "/home/{username}/projects/{project_name}/images/images/{plate_new}"
+illum_out_path: "/home/{username}/projects/{project_name}/images/illum/{plate_new}"
+
+plugins_dir: "/home/{username}/github/CellProfiler-plugins/active_plugins"
+
+# overview_types: ["plates"] #it can be ["plates", "overlays", "branchpoints"]
+# font_path: "/mnt/c/Windows/Fonts/LiberationMono-Bold.ttf"
+# image_config:
+#   target_size_x: 250
+#   target_size_y: 250
+#   num_sites_x: 2
+#   num_sites_y: 2
+#   intensity_cutoff_low: 10
+#   intensity_cutoff_high: 250
+#   intensity_addition: 30
+#   skip_contrast_enhancement: true
+
+microscopes:
+  imagexpress:
+    regex_image: "(?P<Well>[A-P][0-9]{1,2})_s(?P<Site>[0-9])_(?P<Channel>w[0-9])(?!.*_thumb)"
+    regex_plate: ".*[\\/](?P<Plate>.*)"
+    input_folder_pattern: "{image_dir}/{plate_old}/*/*"
+    recursive: true
+    # num_sites_x: 3
+    # num_sites_y: 3
+  endeavor:
+    regex_image: "(?P<Well>[A-P][0-9]{1,2})_s(?P<Site>[0-9]{1,2})_(?P<Channel>w[0-9])_z-|z-m_(?!.*_thumbnail)"
+    regex_plate: ".*[\\/](?P<Plate>.*)"
+    input_folder_pattern: "{image_dir}/{plate_old}"
+    recursive: false
+    # num_sites_x: 2
+    # num_sites_y: 2
+
+ingest:
+  split_extra_channels: []

@@ -1,0 +1,10 @@
+# Brightfield defaults (we use endeavor; channel is w5)
+modality: "brightfield"
+microscope: "endeavor"
+channels:
+  w5: "OrigTL"
+masks:
+  include_masks: true      # set to false in mask/off.yaml if needed
+pattern_images: "*_*_w5_*.tiff"
+tile_shape: [512, 512]
+halo: [128, 128]

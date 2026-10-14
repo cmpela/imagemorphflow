@@ -1,0 +1,12 @@
+{
+  "microscope": "imagexpress",
+  "modality": "cellpainting",
+  "mask_predict": false,
+  "steps": ["illum", "analysis", "ingest", "join"],
+  "join_profile": "basic",
+  "overrides": {
+    "project_name": "CPA-Actives-test",
+    "image_path": "/path/to/your/folder",
+    "symlinks_file": "CPA-Actives-test.json"
+  }
+}

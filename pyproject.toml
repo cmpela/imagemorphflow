@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "imagemorphflow"
+version = "1.0.0"
+requires-python = ">= 3.8"
+description = "Run Cell Painting analysis with CellProfiler 4.2.8"
+authors = [
+  {name = "Fernanda Garcia Fossa"}
+]
+maintainers = [
+  {name = "Fernanda Garcia Fossa"}
+]
+
+dependencies = [
+  "numpy",
+  "pandas",
+  "scipy"
+]
+
+[tool.setuptools]
+packages = ["imagemorphflow"]
+
+[project.scripts]
+imf = "imagemorphflow.cli.cli:cli"

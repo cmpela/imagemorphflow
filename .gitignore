@@ -1,0 +1,6 @@
+/docs/_build
+/docs/notebooks
+*.egg-info/
+__pycache__/
+*.pyc
+imagemorphflow/__pycache__/__init__.cpython-39.pyc

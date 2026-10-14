@@ -1,0 +1,4 @@
+pipeline_type: "analysis"
+pipeline_file: "analysis_endeavor.cppipe"
+max_parallel_plates: 1
+images_per_process: 7

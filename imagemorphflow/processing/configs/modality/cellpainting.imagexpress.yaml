@@ -1,0 +1,8 @@
+modality: "cellpainting"
+microscope: "imagexpress"
+channels:
+  w1: "OrigMito"
+  w2: "OrigPh_golgi"
+  w3: "OrigSyto"
+  w4: "OrigER"
+  w5: "OrigHoechst"
