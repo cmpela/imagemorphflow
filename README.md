@@ -1,5 +1,8 @@
 # imagemorphflow
 
+[<a href="https://doi.org/10.5281/zenodo.23361703"><img src="https://zenodo.org/badge/1418538349.svg" alt="DOI"></a>
+](https://zenodo.org/badge/1418538349.svg)
+
 Python package for automating high-content screening image analysis workflows, from project setup and image organization to morphological profile processing.
 
 `imagemorphflow` uses **CellProfiler 4.2.8** as its core image processing engine, with optional deep learning segmentation through **Cellpose** (via CellProfiler-plugins) or **micro-sam** (based on the Segment Anything Model). Package-specific code handles data ingestion, while **pycytominer** supports downstream annotation, normalization, and feature selection.
