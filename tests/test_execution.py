@@ -72,15 +72,19 @@ class ExecutionTests(unittest.TestCase):
             data["steps"] = ["ingest", "join"]
             data["overrides"].update(base_path=str(root), symlinks_file="plates.json")
             source.write_text(json.dumps(data))
+            real_run = subprocess.run
             def command(cmd, **kwargs):
-                if cmd[0] == "git":
+                if isinstance(cmd, list) and cmd[0] == "git":
                     return subprocess.CompletedProcess(cmd, 1, stdout="")
-                self.assertEqual(cmd[0], sys.executable)
-                return subprocess.CompletedProcess(cmd, 7)
+                if isinstance(cmd, list) and cmd[0] == sys.executable:
+                    return subprocess.CompletedProcess(cmd, 7)
+                # Python 3.9 on Windows may probe the OS with the `ver` command.
+                # Only the processing child is simulated as failed.
+                return real_run(cmd, **kwargs)
             with patch("imagemorphflow.cli.commands.run_pipeline.subprocess.run", side_effect=command):
                 result = CliRunner().invoke(cli, ["run", "--manifest", str(source)])
             self.assertNotEqual(result.exit_code, 0)
-            self.assertIn("return code 7", result.output)
+            self.assertIn("return code 7", result.output, repr(result.exception))
             records = list((root / "logs" / "runs").glob("*.json"))
             self.assertEqual(len(records), 1)
             record = json.loads(records[0].read_text())
