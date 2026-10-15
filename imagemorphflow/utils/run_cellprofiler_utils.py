@@ -1,8 +1,8 @@
+from imagemorphflow.config import load_config
 import os
 import subprocess
 import logging
 import argparse
-import yaml
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -36,12 +36,6 @@ def count_data_rows(csv_path):
         return sum(1 for _ in f)
 
 
-def load_config(config_path):
-    """Load configuration from YAML file."""
-    with open(config_path, "r") as file:
-        return yaml.safe_load(file)
-
-
 def run_cellprofiler(cmd, cellprofiler_env):
     full_cmd = ["conda", "run", "-n", cellprofiler_env] + cmd
     logging.info(f"STARTING: {' '.join(full_cmd)}")
@@ -70,7 +64,7 @@ def run_batches(config, plate, base_path: Path, logger, username):
     if logger is None:
         logger = setup_logging_cellprofiler(str(base_path), plate=plate)
 
-    num_cores = min(file_utils.get_num_cores(0.7), 24)
+    num_cores = min(file_utils.get_num_cores(0.7), int(config.get("max_workers", 4)))
     illum_path_template = config["illum_out_path"]
     if config.get("correct_illumination", True):
         load_data_file = "load_data_with_illum.csv"
@@ -100,7 +94,11 @@ def run_batches(config, plate, base_path: Path, logger, username):
         sys.exit(1)
 
     data_file = os.path.join(base_path, "loaddata", plate, load_data_file)
+    if not Path(pipeline_file).is_file():
+        raise FileNotFoundError(f"CellProfiler pipeline missing: {pipeline_file}")
     total_images = count_data_rows(data_file)
+    if total_images == 0:
+        raise ValueError(f"No images in {data_file}")
     images = list(range(1, total_images + 1))
 
     os.makedirs(output_dir, exist_ok=True)
@@ -129,6 +127,8 @@ def run_batches(config, plate, base_path: Path, logger, username):
 
     else:
         images_per_process = int(config.get("images_per_process", 6))
+        if images_per_process < 1:
+            raise ValueError("images_per_process must be positive")
         commands = []
         for i in range(0, len(images), images_per_process):
             start = images[i]
@@ -174,10 +174,14 @@ def run_batches(config, plate, base_path: Path, logger, username):
 
     if failed:
         logger.warning(f"Attempting to retry {len(failed)} failed commands.")
+        persistent_failures = []
         for cmd in failed:
             logger.info(f"Retrying failed command: {' '.join(cmd)}")
             if not run_cellprofiler(cmd, cellprofiler_env):
+                persistent_failures.append(cmd)
                 logger.critical(f"Retry failed for command: {' '.join(cmd)}")
+        if persistent_failures:
+            raise RuntimeError(f"{len(persistent_failures)} CellProfiler batches failed for plate {plate}")
     else:
         logger.info("All CellProfiler batches completed successfully.")
 
@@ -213,6 +217,7 @@ def process_all(config_path):
             f"Running illum across {len(plates)} plates "
             f"(max_parallel_plates={max_parallel_plates})."
         )
+        plate_failures = []
         with ProcessPoolExecutor(max_workers=max_parallel_plates) as executor:
             futures = {
                 executor.submit(
@@ -227,6 +232,9 @@ def process_all(config_path):
                     top_logger.info(f"Finished plate: {plate}")
                 except Exception as e:
                     top_logger.exception(f"Plate {plate} crashed: {e}")
+                    plate_failures.append(plate)
+        if plate_failures:
+            raise RuntimeError(f"CellProfiler failed for plates: {plate_failures}")
     else:
         # Sequential over plates; each plate parallelizes internally over image chunks
         for plate in plates:

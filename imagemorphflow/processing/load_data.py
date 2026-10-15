@@ -27,14 +27,13 @@ def generate_load_data(config_path):
             f"Microscope '{selected_microscope}' is not defined in config.yaml"
         )
 
-    home_dir = Path.home()
-
     json_file = output_dir / "symlinks" / config["symlinks_file"]
     image_dir = Path(config["image_path"])
     if config.get("use_scratch", False):
         image_dir = Path(config.get("scratch_image_path", "/mnt/scratch"))
 
-    images_folder_symlink = home_dir / "projects" / project_name / "images" / "images"
+    images_folder_symlink = Path(config["image_local_path"]).parent
+    images_folder_symlink.mkdir(parents=True, exist_ok=True)
 
     # file_utils.create_symlinks(image_dir, json_file, images_folder_symlink)
     output_dir = output_dir / "loaddata"
@@ -60,10 +59,7 @@ def generate_load_data(config_path):
             if "*" in str(input_folder_path):
                 input_folders = glob.glob(input_folder_path)
                 if not input_folders:
-                    logger.warning(
-                        f"Warning: No matching files found for {input_folder_path}"
-                    )
-                    continue
+                    raise FileNotFoundError(f"No matching acquisition folders: {input_folder_path}")
                 input_folder_ordered = sorted(input_folders, key=os.path.getmtime)
                 input_folder = Path(
                     input_folder_ordered[-1]
@@ -102,9 +98,7 @@ def generate_load_data(config_path):
                 images_folder_input = images_folder_symlink / plate_new
                 file_utils.create_symlinks(image_dir, json_file, images_folder_symlink)
 
-            illum_folder = (
-                home_dir / "projects" / project_name / "images" / "illum" / plate_new
-            )
+            illum_folder = Path(config["illum_out_path"].format(plate_new=plate_new))
             loaddata_folder_output = output_dir / plate_new
 
             load_data_utils.generate_load_data(

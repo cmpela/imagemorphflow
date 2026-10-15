@@ -1,3 +1,4 @@
+from imagemorphflow.config import load_config, load_mappings as load_symlink_mappings
 # Script to run micro-sam for one image after the other for GPU
 # 15 seconds per image
 # To run
@@ -14,21 +15,9 @@ from datetime import datetime
 from pathlib import Path
 
 
-def load_config(config_path):
-    """Load configuration from YAML file."""
-    with open(config_path, "r") as file:
-        return yaml.safe_load(file)
-
-
 def get_num_cores(fraction=0.8):
     total_cores = os.cpu_count() or 1
     return max(1, int(total_cores * fraction))
-
-
-def load_symlink_mappings(json_path):
-    """Load the symlink mappings from a JSON file."""
-    with open(json_path, "r") as f:
-        return json.load(f)
 
 
 def process_segmentations(config_path):
@@ -90,9 +79,13 @@ def process_segmentations(config_path):
             create_symlinks_for_masks(mask_output_dir, image_path, plate_new, config, logger)
 
     # Retry failed commands
+    persistent_failures = []
     for cmd in failed:
         logger.info(f"Retrying failed command: {' '.join(cmd)}")
-        run_segmentation(cmd)
+        if not run_segmentation(cmd):
+            persistent_failures.append(cmd)
+    if persistent_failures:
+        raise RuntimeError(f"{len(persistent_failures)} segmentation commands failed")
 
 
 def setup_logging(project_name, base_path):
