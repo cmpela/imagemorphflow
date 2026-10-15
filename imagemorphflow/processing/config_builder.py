@@ -11,6 +11,7 @@ from pathlib import Path
 import yaml
 
 from imagemorphflow.config import STEPS, resolve_config, validate_config, validate_manifest
+from imagemorphflow.portable import latest_config
 
 DEFAULT_CONFIGS_DIR = Path(__file__).resolve().parent / "configs"
 
@@ -72,6 +73,8 @@ class ConfigBuilder:
         if "base_path" in overrides and "project_root" not in overrides:
             config.pop("project_root", None)
         config = self.deep_merge(config, overrides)
+        if "channels" in overrides:
+            config["channels"] = copy.deepcopy(overrides["channels"])
         config["microscope"] = microscope
         config["modality"] = modality
         config["mask_predict"] = manifest.get("mask_predict", False)
@@ -91,10 +94,8 @@ class ConfigBuilder:
         config_filename = effective_dir / f"{self.timestamp}_{step}.yaml"
         self.save_yaml(config, config_filename)
         latest_link = effective_dir / f"latest_{step}.yaml"
-        if latest_link.is_symlink() or latest_link.exists():
-            latest_link.unlink()
-        latest_link.symlink_to(config_filename.name)
-        (effective_dir / f"{self.timestamp}_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+        latest_config(config_filename, latest_link)
+        (effective_dir / f"{self.timestamp}_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"[INFO] Effective config -> {config_filename}")
         return config
 

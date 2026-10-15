@@ -1,3 +1,4 @@
+from contextlib import closing
 # utils/join_profiles_utils.py
 import os
 import sqlite3
@@ -24,7 +25,7 @@ def get_image_cols_from_db(
 ):
     image_feature_categories = image_feature_categories or []
 
-    with sqlite3.connect(database_path) as conn:
+    with closing(sqlite3.connect(database_path)) as conn:
         image_table_cols = pd.read_sql("PRAGMA table_info(Image);", conn)["name"].tolist()
 
     base_cols = [
@@ -88,7 +89,7 @@ def clean_metadata_cols(df):
     return df
 
 def get_sql_table_names(database_path):
-    with sqlite3.connect(database_path) as conn:
+    with closing(sqlite3.connect(database_path)) as conn:
         tables = pd.read_sql(
             "SELECT name FROM sqlite_master WHERE type='table';",
             conn,
@@ -98,7 +99,7 @@ def get_sql_table_names(database_path):
 
 
 def read_table(database_path, table_name):
-    with sqlite3.connect(database_path) as conn:
+    with closing(sqlite3.connect(database_path)) as conn:
         df = pd.read_sql('SELECT * FROM "' + table_name.replace('"', '""') + '";', conn)
 
     return df

@@ -2,8 +2,9 @@
 project_name: "c2025"
 microscope: "imagexpress"
 image_path: "/data/images"
+image_link_mode: "auto"
 use_scratch: false
-scratch_image_path: "/mnt/scratch"
+scratch_image_path: "{project_root}/scratch"
 
 cellprofiler_env: "cellprofiler4"
 
@@ -12,7 +13,7 @@ base_path: "{project_root}/workspace"
 image_local_path: "{project_root}/images/images/{plate_new}"
 illum_out_path: "{project_root}/images/illum/{plate_new}"
 
-plugins_dir: "/home/{username}/github/CellProfiler-plugins/active_plugins"
+plugins_dir: "~/github/CellProfiler-plugins/active_plugins"
 
 # overview_types: ["plates"] #it can be ["plates", "overlays", "branchpoints"]
 # font_path: "/mnt/c/Windows/Fonts/LiberationMono-Bold.ttf"
@@ -60,3 +61,8 @@ join:
   strata: [Metadata_Plate, Metadata_Well, Metadata_Site]
   rename_metadata: false
   clean_metadata: false
+
+# Override if Conda is not available on PATH (use conda.exe on Windows).
+conda_executable: null
+sam_env: "sam"
+segmentation_device: "auto"

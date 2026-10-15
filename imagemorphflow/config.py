@@ -4,6 +4,7 @@ import copy
 import getpass
 import json
 import os
+import re
 from pathlib import Path
 
 import yaml
@@ -62,6 +63,10 @@ def resolve_config(config):
 
 def validate_config(config):
     """Reject incompatible switches and invalid resource limits early."""
+    if config.get("image_link_mode", "auto") not in ("auto", "symlink", "reference"):
+        raise ValueError("image_link_mode must be auto, symlink or reference")
+    if config.get("segmentation_device", "auto") not in ("auto", "cpu", "cuda", "mps"):
+        raise ValueError("segmentation_device must be auto, cpu, cuda or mps")
     for field in ("images_per_process", "max_parallel_plates", "max_workers", "mask_workers"):
         value = config.get(field, 1)
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
@@ -99,14 +104,22 @@ def load_config(path):
     return validate_config(resolve_config(config))
 
 
+def portable_folder_name(name):
+    if not isinstance(name, str) or not name.strip() or name in (".", "..") or name.endswith((".", " ")):
+        return False
+    if any(ord(char) < 32 or char in '<>:"/\\|?*' for char in name):
+        return False
+    return not re.fullmatch(r"CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]", name.split(".")[0], flags=re.IGNORECASE)
+
+
 def load_mappings(path):
     with open(path, encoding="utf-8") as stream:
         mappings = json.load(stream)
     if not isinstance(mappings, dict) or not mappings:
         raise ValueError(f"No plate mappings in {path}")
     for source, target in mappings.items():
-        if not all(isinstance(name, str) and name.strip() and name not in (".", "..") and "/" not in name and "\\" not in name for name in (source, target)):
-            raise ValueError(f"Complete plate mappings in {path}; names must be non-empty folder names")
-    if len(set(mappings.values())) != len(mappings):
-        raise ValueError(f"Plate names must be unique in {path}")
+        if not all(portable_folder_name(name) for name in (source, target)):
+            raise ValueError(f"Complete plate mappings in {path}; names must be portable, non-empty folder names")
+    if len({name.casefold() for name in mappings.values()}) != len(mappings):
+        raise ValueError(f"Plate names must be unique ignoring case in {path}")
     return mappings

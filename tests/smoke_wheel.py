@@ -1,6 +1,7 @@
 """Install a built wheel outside the source tree and exercise CLI/resources."""
 
 import os
+import glob
 import subprocess
 import sys
 import tempfile
@@ -9,7 +10,10 @@ from pathlib import Path
 
 
 def main():
-    wheel = Path(sys.argv[1]).resolve()
+    candidates = glob.glob(sys.argv[1])
+    if len(candidates) != 1:
+        raise ValueError(f"Expected exactly one wheel, got {candidates}")
+    wheel = Path(candidates[0]).resolve()
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         # Dependencies are supplied by the CI job; only the package comes from the wheel.

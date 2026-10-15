@@ -1,4 +1,5 @@
 from imagemorphflow.config import load_config
+from imagemorphflow.portable import conda_command
 import os
 import subprocess
 import logging
@@ -24,6 +25,7 @@ def setup_logging_cellprofiler(base_path: str, plate: Optional[str] = None):
 
     logging.basicConfig(
         filename=error_log_path,
+        encoding="utf-8",
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
@@ -36,8 +38,8 @@ def count_data_rows(csv_path):
         return sum(1 for _ in f)
 
 
-def run_cellprofiler(cmd, cellprofiler_env):
-    full_cmd = ["conda", "run", "-n", cellprofiler_env] + cmd
+def run_cellprofiler(cmd, cellprofiler_env, conda_executable=None):
+    full_cmd = conda_command(cellprofiler_env, cmd, conda_executable)
     logging.info(f"STARTING: {' '.join(full_cmd)}")
     env = os.environ.copy()
     env.setdefault("OMP_NUM_THREADS", "2")
@@ -46,7 +48,7 @@ def run_cellprofiler(cmd, cellprofiler_env):
 
     try:
         # subprocess.run(cmd, check=True)
-        full_cmd = ["conda", "run", "-n", cellprofiler_env] + cmd
+        full_cmd = conda_command(cellprofiler_env, cmd, conda_executable)
         subprocess.run(full_cmd, check=True, env=env)
         return True
     except subprocess.CalledProcessError as e:
@@ -162,7 +164,7 @@ def run_batches(config, plate, base_path: Path, logger, username):
     # Note: for illum there is only one command; inner parallelism is mainly for non-illum
     with ProcessPoolExecutor(max_workers=num_cores) as executor:
         futures = {
-            executor.submit(run_cellprofiler, cmd, cellprofiler_env): cmd
+            executor.submit(run_cellprofiler, cmd, cellprofiler_env, config.get("conda_executable")): cmd
             for cmd in commands
         }
         for future in as_completed(futures):
@@ -177,7 +179,7 @@ def run_batches(config, plate, base_path: Path, logger, username):
         persistent_failures = []
         for cmd in failed:
             logger.info(f"Retrying failed command: {' '.join(cmd)}")
-            if not run_cellprofiler(cmd, cellprofiler_env):
+            if not run_cellprofiler(cmd, cellprofiler_env, config.get("conda_executable")):
                 persistent_failures.append(cmd)
                 logger.critical(f"Retry failed for command: {' '.join(cmd)}")
         if persistent_failures:

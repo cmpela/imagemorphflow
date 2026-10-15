@@ -1,3 +1,4 @@
+from support import temporary_directory
 import json
 import logging
 import subprocess
@@ -51,7 +52,7 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(plan_steps(data), ["init", "copy_to_scratch", "load_data", "predict_masks", "analysis", "ingest", "join"])
 
     def test_dry_run_has_no_side_effects(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             source = root / "manifest.json"
             source.write_text(json.dumps(manifest(root / "project")))
@@ -62,7 +63,7 @@ class ExecutionTests(unittest.TestCase):
             self.assertFalse((root / "project").exists())
 
     def test_failure_stops_pipeline_and_records_error(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             (root / "symlinks").mkdir()
             (root / "symlinks" / "plates.json").write_text('{"raw":"p01"}')
@@ -88,7 +89,7 @@ class ExecutionTests(unittest.TestCase):
             self.assertIn("sha256", record["config"])
 
     def test_cellprofiler_retry_exhaustion_is_error(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             (root / "pipelines").mkdir()
             (root / "pipelines" / "analysis.cppipe").touch()
@@ -102,7 +103,7 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual(run.call_count, 2)
 
     def test_cellprofiler_retry_recovery_succeeds(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             (root / "pipelines").mkdir()
             (root / "pipelines" / "a.cppipe").touch()
@@ -114,7 +115,7 @@ class ExecutionTests(unittest.TestCase):
                 cp.run_batches(cfg, "p01", root, logging.getLogger("test"), "user")
 
     def test_cellprofiler_wrapper_preserves_exit_code(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             config = root / "config.yaml"
             config.write_text(yaml.safe_dump({"base_path": str(root), "project_name": "demo"}))
@@ -125,7 +126,7 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual(error.exception.code, 9)
 
     def test_illumination_plate_failure_reaches_coordinator(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             (root / 'symlinks').mkdir()
             (root / 'symlinks' / 'plates.json').write_text('{"raw":"p01"}')
@@ -138,7 +139,7 @@ class ExecutionTests(unittest.TestCase):
 
     def test_mask_retry_exhaustion_is_error(self):
         from imagemorphflow.processing import predict_masks
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             (root / 'symlinks').mkdir()
             (root / 'symlinks' / 'plates.json').write_text('{"raw":"p01"}')

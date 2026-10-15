@@ -10,6 +10,7 @@ from importlib import metadata
 from pathlib import Path
 
 from imagemorphflow import __version__
+from imagemorphflow.portable import conda_command
 
 
 def timestamp():
@@ -52,7 +53,7 @@ class RunRecord:
         self.path = directory / f"{uuid.uuid4().hex}.json"
         self.data = {
             "script": script, "started_at": timestamp(), "status": "running",
-            "python": platform.python_version(), "command": command,
+            "python": platform.python_version(), "system": platform.system(), "os_release": platform.release(), "architecture": platform.machine(), "command": command,
             "config": fingerprint(config_path), "effective_config": config,
             "packages": package_versions(),
             "external_environments": {key: config[key] for key in ("cellprofiler_env", "sam_env") if key in config},
@@ -68,7 +69,7 @@ class RunRecord:
         if environment:
             probe = "import json; from importlib.metadata import distributions; print(json.dumps({d.metadata['Name']: d.version for d in distributions() if d.metadata['Name'].lower() in ('cellprofiler', 'cellpose', 'micro-sam')}))"
             try:
-                result = subprocess.run(["conda", "run", "-n", environment, "python", "-c", probe], capture_output=True, text=True, timeout=20)
+                result = subprocess.run(conda_command(environment, ["python", "-c", probe], config.get("conda_executable")), capture_output=True, text=True, timeout=20)
                 self.data["observed_external_versions"] = json.loads(result.stdout) if result.returncode == 0 else {"available": False}
             except (OSError, subprocess.TimeoutExpired, ValueError):
                 self.data["observed_external_versions"] = {"available": False}

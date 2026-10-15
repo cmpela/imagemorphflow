@@ -1,3 +1,4 @@
+from contextlib import closing
 import os
 import pandas as pd
 import zlib
@@ -201,7 +202,7 @@ def ingest_to_db(source, config, output_db_path, skip_image_prefix=True):
     descriptor, temporary = tempfile.mkstemp(prefix=output.stem + "_", suffix=".db", dir=output.parent)
     os.close(descriptor)
     try:
-        with sqlite3.connect(temporary) as conn:
+        with closing(sqlite3.connect(temporary)) as conn:
             for table_name, dfs in tables_data.items():
                 merged_df = pd.concat(dfs, ignore_index=True)
                 merged_df.to_sql(table_name, conn, if_exists="replace", index=False)

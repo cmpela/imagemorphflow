@@ -135,6 +135,7 @@ def setup_logging(config, base_path, pipeline="no_name"):
 
     logging.basicConfig(
         filename=error_log_path,
+        encoding="utf-8",
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
     )

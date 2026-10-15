@@ -1,6 +1,7 @@
 """Validated CLI entry points and manifest-driven execution."""
 
 import shlex
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -44,7 +45,9 @@ def run_script(script, config_path):
     record = RunRecord(script, config_path, config, command)
     click.echo(f"Executing: {shlex.join(command)}")
     try:
-        result = subprocess.run(command)  # Stream output instead of buffering a long scientific run.
+        environment = os.environ.copy()
+        environment["PYTHONUTF8"] = "1"
+        result = subprocess.run(command, env=environment)  # Stream long scientific runs.
     except BaseException as error:
         record.finish(1, error)
         raise

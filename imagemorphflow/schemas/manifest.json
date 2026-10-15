@@ -96,6 +96,27 @@
         },
         "feature_selection": {
           "$ref": "#/$defs/toggle"
+        },
+        "image_link_mode": {
+          "enum": [
+            "auto",
+            "symlink",
+            "reference"
+          ]
+        },
+        "segmentation_device": {
+          "enum": [
+            "auto",
+            "cpu",
+            "cuda",
+            "mps"
+          ]
+        },
+        "conda_executable": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },

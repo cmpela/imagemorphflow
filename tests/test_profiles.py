@@ -1,3 +1,5 @@
+from support import temporary_directory
+from contextlib import closing
 import json
 import logging
 import sqlite3
@@ -33,12 +35,12 @@ def ingest_config():
 
 class ProfileTests(unittest.TestCase):
     def test_sqlite_ingest_and_channel_split(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             write_outputs(root / "source")
             db = root / "plate.db"
             ingest_to_db(root / "source", ingest_config(), db)
-            with sqlite3.connect(db) as conn:
+            with closing(sqlite3.connect(db)) as conn:
                 cells = pd.read_sql("SELECT * FROM Cells", conn)
                 extra = pd.read_sql("SELECT * FROM Cells_DNA_extra", conn)
                 self.assertEqual(len(cells), 2)
@@ -49,13 +51,13 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(len(joined), 2)
             self.assertEqual(list(joined["Cells_Intensity_MeanIntensity_DNA"]), [0.2, 0.4])
             # Duplicate right-side object keys must not silently multiply cell rows.
-            with sqlite3.connect(db) as conn:
+            with closing(sqlite3.connect(db)) as conn:
                 pd.concat([extra, extra.iloc[:1]]).to_sql("Cells_DNA_extra", conn, if_exists="replace", index=False)
             with self.assertRaises(pd.errors.MergeError):
                 merge_extra_channel_tables(cells, db, ["DNA"], ["cells"])
 
     def test_invalid_input_preserves_existing_database(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             write_outputs(root / "source", missing=True)
             db = root / "plate.db"
@@ -65,7 +67,7 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(db.read_bytes(), b"previous result")
 
     def test_transaction_failure_preserves_database(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             write_outputs(root / "source")
             db = root / "plate.db"
@@ -77,12 +79,12 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(list(root.glob("plate_*.db")), [])
 
     def test_empty_source_is_error(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             with self.assertRaisesRegex(ValueError, "No data"):
                 ingest_to_db(directory, ingest_config(), Path(directory) / "out.db")
 
     def test_feature_selection_without_normalization_uses_raw_profiles(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             (root / "symlinks").mkdir()
             (root / "symlinks" / "plates.json").write_text(json.dumps({"raw": "p01"}))

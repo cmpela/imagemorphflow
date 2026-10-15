@@ -1,3 +1,4 @@
+from support import temporary_directory
 import copy
 import json
 import tempfile
@@ -24,8 +25,8 @@ class ConfigTests(unittest.TestCase):
             data.update(microscope=microscope, modality=modality)
             cfg = ConfigBuilder().build_config(data, "analysis")
             self.assertEqual(cfg["microscope"], microscope)
-            self.assertEqual(cfg["base_path"], "/tmp/imf-test/workspace")
-            self.assertEqual(cfg["image_local_path"], "/tmp/imf-test/images/images/{plate_new}")
+            self.assertEqual(Path(cfg["base_path"]), Path("/tmp/imf-test/workspace").resolve())
+            self.assertEqual(Path(cfg["image_local_path"]), Path("/tmp/imf-test/images/images/{plate_new}").resolve())
             self.assertNotIn("{project_root}", json.dumps(cfg))
 
     def test_reject_invalid_manifest(self):
@@ -60,28 +61,32 @@ class ConfigTests(unittest.TestCase):
             parse_overrides(["bad"])
 
     def test_effective_config_and_broken_latest_link(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             source = root / "manifest.json"
             source.write_text(json.dumps(manifest(root)))
             output = root / "configs"
             output.mkdir()
-            (output / "latest_analysis.yaml").symlink_to("missing.yaml")
+            try:
+                (output / "latest_analysis.yaml").symlink_to("missing.yaml")
+            except OSError:
+                (output / "latest_analysis.yaml").write_text("stale config")
             builder = ConfigBuilder()
             cfg = builder.generate_effective_config(source, "analysis", output)
             self.assertEqual(load_config(output / "latest_analysis.yaml"), cfg)
-            self.assertFalse(Path((output / "latest_analysis.yaml").readlink()).is_absolute())
+            if (output / "latest_analysis.yaml").is_symlink():
+                self.assertFalse(Path((output / "latest_analysis.yaml").readlink()).is_absolute())
 
     def test_legacy_workspace_override(self):
         data = manifest()
         del data["overrides"]["project_root"]
         data["overrides"]["base_path"] = "/tmp/custom/workspace"
         cfg = ConfigBuilder().build_config(data, "analysis")
-        self.assertEqual(cfg["project_root"], "/tmp/custom")
-        self.assertEqual(cfg["image_local_path"], "/tmp/custom/images/images/{plate_new}")
+        self.assertEqual(Path(cfg["project_root"]), Path("/tmp/custom").resolve())
+        self.assertEqual(Path(cfg["image_local_path"]), Path("/tmp/custom/images/images/{plate_new}").resolve())
 
     def test_mappings_require_unique_nonempty_names(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             path = Path(directory) / "plates.json"
             for mappings in ({}, {"plate": ""}, {"p1": "x", "p2": "x"}, {"../p": "x"}):
                 path.write_text(json.dumps(mappings))

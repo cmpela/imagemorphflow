@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "Please credit the original imagemorphflow project and identify the fork revision used in your analysis."
 type: software
 title: "imagemorphflow (cmpela fork)"
-version: 1.1.0
+version: 1.2.0
 license: BSD-3-Clause
 authors:
   - family-names: "Fossa"

@@ -1,3 +1,4 @@
+from contextlib import closing
 """CPU-only example: synthetic images -> load-data CSV -> SQLite -> checked joins."""
 
 import argparse
@@ -42,7 +43,7 @@ def run_demo(output):
     config_path.write_text(json.dumps(config, indent=2))
     process_all_plates(str(config_path))
     db = workspace / "backend" / "p01" / "p01.db"
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection:
         cells = pd.read_sql("SELECT * FROM Cells", connection).rename(columns={
             "TableNumber": "Image_TableNumber", "ImageNumber": "Metadata_ImageNumber", "ObjectNumber": "Cells_Number_Object_Number"})
     merged = merge_extra_channel_tables(cells, db, ["DNA"], ["cells"])

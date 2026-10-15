@@ -1,3 +1,4 @@
+from imagemorphflow.portable import plate_image_directory
 from imagemorphflow.config import load_config, load_mappings as load_symlink_mappings
 # Script to run micro-sam for one image after the other for GPU
 # 15 seconds per image
@@ -47,11 +48,7 @@ def process_segmentations(config_path):
     failed = []
     for plate_old, plate_new in symlink_mappings.items():
         # Input path uses plate_new (symlinks)
-        image_path = image_path_template.format(
-            username=username,
-            project_name=config["project_name"],
-            plate_new=plate_new,
-        )
+        image_path = str(plate_image_directory(config, plate_new))
         
         # Output path uses plate_old (real names)
         mask_output_dir = mask_output_dir_template.format(
@@ -96,6 +93,7 @@ def setup_logging(project_name, base_path):
 
     logging.basicConfig(
         filename=error_log_path,
+        encoding="utf-8",
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
     )

@@ -8,7 +8,7 @@ This fork adds installation checks, explicit configuration, failure propagation,
 
 ## Installation
 
-Python **3.9+**; Ubuntu 22.04/24.04 is the intended scientific runtime. Use WSL2 on Windows. CI checks the core package on Python 3.9 and 3.12, without GPU software.
+Python **3.9+**. The core package supports **macOS, Windows and Linux**, with native CI jobs on all three systems (including Apple Silicon and Intel macOS). CellProfiler, plugins and GPU models are separate scientific dependencies; see the [platform guide](docs/platforms.md) for installation instructions and validation limits.
 
 ```bash
 git clone https://github.com/cmpela/imagemorphflow.git
@@ -83,6 +83,8 @@ Presets support Cell Painting on **ImageXpress** and **Endeavor**, and brightfie
 
 The bundled [JSON Schema](imagemorphflow/schemas/manifest.json) validates manifests. Unknown top-level fields, unsupported steps, invalid resource limits and incompatible switches produce errors. `overrides` remains extensible for specialized scripts; review its keys against the presets.
 
+Use `imf doctor` (or `imf doctor --json`) to inspect your OS, Python, Conda and resolved project settings.
+
 Paths share a single resolver. `project_root` defaults to `~/projects/{project_name}`, `base_path` to `{project_root}/workspace`, and image/mask paths derive from that root. `~`, environment variables and `{username}` / `{project_name}` are expanded; `{plate_new}` is retained until each plate is processed. Relative paths are resolved from the working directory, so use absolute paths for repeatable runs.
 
 ```bash
@@ -93,7 +95,7 @@ imf build --manifest example_manifest.json --step analysis \
 
 Use top-level `step_overrides` for stage-specific settings, for example `"step_overrides": {"illum": {"pipeline_file": "illum.cppipe"}, "analysis": {"pipeline_file": "analysis.cppipe"}}`. Stage overrides take precedence over shared overrides; CLI `-O` settings take precedence over both.
 
-Effective configs and manifest snapshots are saved under `workspace/configs/effective/`, using unique UTC timestamps. Relative `latest_<step>.yaml` symlinks point to the newest configs.
+Effective configs and manifest snapshots are saved under `workspace/configs/effective/`, using unique UTC timestamps. Relative `latest_<step>.yaml` symlinks point to the newest configs. Where symlinks are unavailable, these small YAML files are copied atomically instead.
 
 ## Run your own analysis
 
@@ -122,6 +124,8 @@ Then run the selected stages:
 ```bash
 imf run --manifest example_manifest.json
 ```
+
+`image_link_mode: "auto"` uses directory symlinks when permitted and otherwise reads the original image directory directly. Use `"reference"` to avoid links on every platform or `"symlink"` to require them. Microscopy datasets are never automatically copied by this fallback.
 
 The runner orders initialization, optional scratch copy, load-data creation, optional micro-sam prediction, illumination, analysis, ingestion and joining. Image stages add setup prerequisites; requesting both analysis and join also adds ingestion. `mask_predict=false` skips prediction. Joining existing results can use `steps: ["join"]` without reprocessing images.
 
@@ -172,6 +176,8 @@ python -m build
 python tests/smoke_wheel.py dist/*.whl
 ```
 
-CI executes these checks and the synthetic example. The wheel smoke test installs the built artifact in a temporary environment outside the source tree, checking CLI entry points, subpackages, schemas and YAML presets.
+CI executes these checks and the synthetic example. On Windows, run the PowerShell installation commands in the [platform guide](docs/platforms.md); Unix activation commands above apply to macOS/Linux.
+
+The wheel smoke test installs the built artifact in a temporary environment outside the source tree, checking CLI entry points, subpackages, schemas and YAML presets.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md), [migration notes](docs/migration.md), and [CITATION.cff](CITATION.cff).

@@ -6,6 +6,7 @@ import glob
 import csv
 import fnmatch
 from pathlib import Path
+from imagemorphflow.portable import conda_command
 from datetime import datetime
 
 
@@ -17,6 +18,7 @@ def setup_logging(project_name, base_path):
 
     logging.basicConfig(
         filename=error_log_path,
+        encoding="utf-8",
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
@@ -49,7 +51,7 @@ def get_images(image_path, pattern, data_file=None):
     # Use glob to match files with the given pattern
     if data_file and Path(data_file).is_file():
         image_files = []
-        with open(data_file, newline="") as stream:
+        with open(data_file, newline="", encoding="utf-8") as stream:
             for row in csv.DictReader(stream):
                 for key, name in row.items():
                     if key.startswith("FileName_") and not key.startswith("FileName_Illum") and fnmatch.fnmatch(name, pattern):
@@ -102,7 +104,10 @@ def generate_segmentation_command(image_path, output_dir, plate, config):
             # "--device",
             # "cpu",
         ]
-        commands.append(["conda", "run", "-n", config.get("sam_env", "sam")] + cmd)
+        device = config.get("segmentation_device", "auto")
+        if device != "auto":
+            cmd.extend(["--device", device])
+        commands.append(conda_command(config.get("sam_env", "sam"), cmd, config.get("conda_executable")))
 
     return commands
 

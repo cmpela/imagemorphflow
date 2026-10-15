@@ -3,5 +3,5 @@ include example_manifest*.json
 recursive-include imagemorphflow *.yaml *.json *.sh
 recursive-include docs *.md
 recursive-include requirements *.txt *.md
-recursive-include examples *.py
+recursive-include examples *.py *.json
 recursive-include tests *.py

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0 — macOS, Windows and Linux
+
+- Add direct-reference image access when symlinks are unavailable, without copying datasets or requiring administrator privileges.
+- Use atomic YAML copies for latest-config aliases when file symlinks are unavailable.
+- Resolve Conda using an explicit executable or CONDA_EXE, stream external output, and expose segmentation device selection.
+- Add `imf doctor`, platform installation instructions and OS-specific example manifests.
+- Close SQLite connections before replacing database files, and clean up logging handles in test fixtures for Windows file-lock semantics.
+- Run native CI on Linux, Windows, Apple Silicon macOS and Intel macOS; expand wildcard wheel arguments portably.
+- Reject case-colliding/reserved plate names; allow channel overrides to replace presets completely.
+- Preserve scientific-validation limits for external pipelines, plugins and GPU backends.
+
 ## 1.1.0 — fork improvements
 
 - Package CLI, processing modules, utilities, JSON Schema and YAML presets in wheels; declare core and optional dependencies and use one version source.

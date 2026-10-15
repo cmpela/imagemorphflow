@@ -1,3 +1,4 @@
+from support import temporary_directory
 import logging
 import tempfile
 import unittest
@@ -16,7 +17,7 @@ class ImageTests(unittest.TestCase):
                                   cluster_img_folder=str(directory), cluster_illum_folder=str(directory / "illum"))
 
     def test_channels_match_well_and_site(self):
-        with tempfile.TemporaryDirectory() as temp:
+        with temporary_directory() as temp:
             path = Path(temp)
             for well in ("A01", "B01"):
                 for channel in ("w1", "w2"):
@@ -30,7 +31,7 @@ class ImageTests(unittest.TestCase):
                 self.assertTrue(row["FileName_DNA"].startswith(row["Metadata_Well"]))
 
     def test_missing_channel_fails_instead_of_misalignment(self):
-        with tempfile.TemporaryDirectory() as temp:
+        with temporary_directory() as temp:
             path = Path(temp)
             Image.new("L", (4, 4)).save(path / "A01_s1_w1.tif")
             with self.assertRaisesRegex(ValueError, "Missing channels"):
@@ -39,7 +40,7 @@ class ImageTests(unittest.TestCase):
     def test_mask_prediction_uses_nested_load_data_paths(self):
         import csv
         from imagemorphflow.utils.predict_masks_utils import generate_segmentation_command
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root = Path(directory)
             data = root / 'loaddata' / 'p01'
             data.mkdir(parents=True)
@@ -52,7 +53,7 @@ class ImageTests(unittest.TestCase):
             config = {'base_path':str(root), 'model':'vit_l_lm', 'pattern_images':'*_w1.tif', 'sam_env':'custom-sam', 'tile_shape':[128,256]}
             commands = generate_segmentation_command(str(root / 'images' / 'p01'), str(root / 'masks'), 'p01', config)
             self.assertEqual(len(commands), 1)
-            self.assertEqual(commands[0][:4], ['conda','run','-n','custom-sam'])
+            self.assertEqual(commands[0][1:5], ['run','--no-capture-output','-n','custom-sam'])
             self.assertIn(str(nested / 'A01_s1_w1.tif'), commands[0])
             index = commands[0].index('--tile_shape')
             self.assertEqual(commands[0][index+1:index+3], ['128','256'])
